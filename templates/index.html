@@ -1,0 +1,46 @@
+{% extends "body.html" %}
+
+{% block head %} <title>Communicator</title> {% endblock %}
+
+{% block body %}
+    <form action="{{ url_for('index') }}", method="POST">
+        <div>
+            {{ form.username(class_='form-control',
+                    placeholder='Username',
+                    autocomplete='off',
+                    autofocus=true) }}
+            <ul>
+                {% for error in form.username.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            {{ form.password(class_='form-control',
+                    placeholder='Password') }}
+            <ul>
+                {% for error in form.password.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            {{ form.confirm_pswd(class_='form-control',
+                    placeholder='Retype password')}}
+            <ul>
+                {% for error in form.confirm_pswd.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            {{ form.submit_btton }}
+        </div>
+        <div>
+            <h1></h1>
+            <a href="/login">Or login</a>
+        </div>
+
+        {{ form.csrf_token }}
+    </form>
+{% endblock %}
