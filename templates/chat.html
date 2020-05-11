@@ -9,23 +9,23 @@
             {{ form.friend(class_='form-control',
                     placeholder='Username',
                     autocomplete='off',
-                    autofocus=true) }}
+                    autofocus=true) }} <input type ="submit" name="action" value="Select">
         </div>
         <ul id="messages_from">
             {% for msg in messages_from %}
-                <li>"{{ msg.username_from  }}" send you "{{ msg.message }}"</li>
+                <li>{{ msg.date }} "{{ msg.username_from  }}" send you "{{ msg.message }}"</li>
             {% endfor %}
         </ul>
         <ul id="messages_to">
             {% for msg in messages_to %}
-                <li>You  send "{{ msg.message}}" to "{{ msg.username_to}}"</li>
+                <li>{{ msg.date }} You  send "{{ msg.message}}" to "{{ msg.username_to}}"</li>
             {% endfor %}
         </ul>
         <div>
             {{ form.text(class_='form-control',
                     placeholder='Message',
                     autocomplete='off',
-                    autofocus=true) }} {{ form.send_btton }}
+                    autofocus=true) }} <input type ="submit" name="action" value="Send">
             <h1></h1>
         </div>
         <div>

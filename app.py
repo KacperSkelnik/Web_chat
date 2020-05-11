@@ -80,14 +80,18 @@ def chat():
         .order_by(Messages.id.desc()).limit(6)
 
     if chat_form.validate_on_submit():
-        message = chat_form.text.data
-        user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
+        if request.form['action'] == 'Send':
+            message = chat_form.text.data
+            user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
-        new_message = Messages(username_to=user_to_send, username_from=current_user.username, message=message)
-        db.session.add(new_message)
-        db.session.commit()
+            new_message = Messages(username_to=user_to_send, username_from=current_user.username,message=message)
+            db.session.add(new_message)
+            db.session.commit()
 
-        chat_form.text.data = ""
+            chat_form.text.data = ""
+        if request.form['action'] == 'Select':
+            return render_template('chat.html', form=chat_form, messages_to=messages_to,
+                                   messages_from=messages_from, name=current_user.username)
 
     #print(chat_form.errors)
 

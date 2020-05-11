@@ -41,8 +41,5 @@ class LoginForm(FlaskForm):
 
 class ChatForm(FlaskForm):
     """ Logout form """
-    #friends = [(friend.id, friend.username) for friend in db.session.query(User).all()]
-
     text = TextAreaField('message', render_kw={"rows": 3, "cols": 50})
-    send_btton = SubmitField("Send")
     friend = SelectField('friend', coerce=int, validate_choice=False)
