@@ -3,13 +3,14 @@ from wtforms import StringField, PasswordField, SubmitField, TextAreaField
 from wtforms.validators import InputRequired, Length, EqualTo, ValidationError
 
 from database import *
+from app import db
 
 
 def validate_login(form, field):
     password = field.data
     username = form.username.data
 
-    user_object = User.query.filter_by(username=username).first()
+    user_object = db.session.query(User).filter_by(username=username).first()
     if user_object is None:
         raise ValidationError("Username or password is incorrect")
     elif password != user_object.password:
@@ -27,7 +28,7 @@ class RegistrationForm(FlaskForm):
     submit_btton = SubmitField("Create")
 
     def validate_username(self, username):
-        user_object = User.query.filter_by(username=username.data).first()
+        user_object = db.session.query(User).filter_by(username=username.data).first()
         if user_object:
             raise ValidationError("Username already exists.")
 
@@ -40,5 +41,6 @@ class LoginForm(FlaskForm):
 
 class ChatForm(FlaskForm):
     """ Logout form """
-    text = TextAreaField('Message', render_kw={"rows": 10, "cols": 50})
-    logout_btton = SubmitField("Logout")
+    text = TextAreaField('Message', render_kw={"rows": 3, "cols": 50})
+    user_to_send = StringField('User to send', validators=[InputRequired(message="Username required")])
+    send_btton = SubmitField("Send")

@@ -3,16 +3,28 @@
 {% block head %} <title>Communicator</title> {% endblock %}
 
 {% block body %}
-    <form action="{{ url_for('login') }}", method="POST">
+    <form action="{{ url_for('chat') }}", method="POST">
+        <ul id="messages">
+            {% for msg in messages %}
+                <li>"{{ msg.username  }}" send you "{{ msg.message }}"</li>
+            {% endfor %}
+        </ul>
         <div>
-            {{ form.text(class_='form-control',
+            {{ form.user_to_send(class_='form-control',
                     placeholder='Username',
                     autocomplete='off',
                     autofocus=true) }}
+        </div>
+        <div>
+            {{ form.text(class_='form-control',
+                    placeholder='Message',
+                    autocomplete='off',
+                    autofocus=true) }} {{ form.send_btton }}
             <h1></h1>
         </div>
         <div>
-            {{ form.logout_btton }}
+            <h1></h1>
+            <a href="/logout">Logout</a>
         </div>
 
         {{ form.csrf_token }}

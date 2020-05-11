@@ -11,7 +11,7 @@
                     autofocus=true) }}
             <ul>
                 {% for error in form.username.errors %}
-                <li>{{ error }}</li>
+                    <li>{{ error }}</li>
                 {% endfor %}
             </ul>
         </div>
@@ -20,7 +20,7 @@
                     placeholder='Password') }}
             <ul>
                 {% for error in form.password.errors %}
-                <li>{{ error }}</li>
+                    <li>{{ error }}</li>
                 {% endfor %}
             </ul>
         </div>
@@ -29,7 +29,7 @@
                     placeholder='Retype password')}}
             <ul>
                 {% for error in form.confirm_pswd.errors %}
-                <li>{{ error }}</li>
+                    <li>{{ error }}</li>
                 {% endfor %}
             </ul>
         </div>

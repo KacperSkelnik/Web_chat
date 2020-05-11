@@ -1,8 +1,8 @@
 from flask import Flask, render_template, redirect, url_for
-from flask_login import LoginManager, login_user, logout_user, login_required
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_sqlalchemy import SQLAlchemy
 
-from wtform_fields import *
-from database import *
+from database import Base, User, Messages
 
 # Configure application
 app = Flask(__name__)
@@ -13,17 +13,28 @@ app.config.update(dict(
 app.debug = True
 
 # Configure database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+
+@app.before_first_request
+def setup():
+    #Base.metadata.drop_all(bind=db.engine)
+    Base.metadata.create_all(bind=db.engine)
+
+
+from wtform_fields import *
+
+
 # Configure flask_login
-login = LoginManager(app)
+login = LoginManager()
 login.init_app(app)
 
 
 @login.user_loader
 def load_user(id):
-    return User.query.get(int(id))
+    return db.session.query(User).get(int(id))
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -46,7 +57,7 @@ def index():
 def login():
     login_form = LoginForm()
     if login_form.validate_on_submit():
-        user_object = User.query.filter_by(username=login_form.username.data).first()
+        user_object = db.session.query(User).filter_by(username=login_form.username.data).first()
         login_user(user_object)
         return redirect(url_for('chat'))
 
@@ -57,13 +68,26 @@ def login():
 @login_required
 def chat():
     chat_form = ChatForm()
-    return render_template('chat.html', form=chat_form)
+    messages_from = db.session.query(Messages).filter_by(username=current_user.username).order_by(Messages.id.desc()).limit(6)
+    #messages_to = db.session.query(Messages).filter_by(username=current_user.username).order_by(Messages.id.desc()).limit(6)
+
+    if chat_form.validate_on_submit():
+        message = chat_form.text.data
+        user_to_send = chat_form.user_to_send.data
+
+        new_message = Messages(username=user_to_send, message=message)
+        db.session.add(new_message)
+        db.session.commit()
+
+        chat_form.text.data = ""
+
+    return render_template('chat.html', form=chat_form, messages=messages_from)
 
 
 @app.route('/logout', methods=['GET'])
 def logout():
     logout_user()
-    return "Log out"
+    return "You are log out"
 
 
 if __name__ == '__main__':
