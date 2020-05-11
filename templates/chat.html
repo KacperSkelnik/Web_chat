@@ -4,17 +4,23 @@
 
 {% block body %}
     <form action="{{ url_for('chat') }}", method="POST">
-        <ul id="messages">
-            {% for msg in messages %}
-                <li>"{{ msg.username  }}" send you "{{ msg.message }}"</li>
-            {% endfor %}
-        </ul>
+        <div id="name">Hello {{ name }}! Nice to see you!</div>
         <div>
-            {{ form.user_to_send(class_='form-control',
+            {{ form.friend(class_='form-control',
                     placeholder='Username',
                     autocomplete='off',
                     autofocus=true) }}
         </div>
+        <ul id="messages_from">
+            {% for msg in messages_from %}
+                <li>"{{ msg.username_from  }}" send you "{{ msg.message }}"</li>
+            {% endfor %}
+        </ul>
+        <ul id="messages_to">
+            {% for msg in messages_to %}
+                <li>You  send "{{ msg.message}}" to "{{ msg.username_to}}"</li>
+            {% endfor %}
+        </ul>
         <div>
             {{ form.text(class_='form-control',
                     placeholder='Message',
@@ -26,7 +32,7 @@
             <h1></h1>
             <a href="/logout">Logout</a>
         </div>
-
         {{ form.csrf_token }}
+        {{ form.hidden_tag() }}
     </form>
 {% endblock %}

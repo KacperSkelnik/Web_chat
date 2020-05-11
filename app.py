@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_sqlalchemy import SQLAlchemy
 
@@ -68,20 +68,31 @@ def login():
 @login_required
 def chat():
     chat_form = ChatForm()
-    messages_from = db.session.query(Messages).filter_by(username=current_user.username).order_by(Messages.id.desc()).limit(6)
-    #messages_to = db.session.query(Messages).filter_by(username=current_user.username).order_by(Messages.id.desc()).limit(6)
+    chat_form.friend.choices = [(friend.id, friend.username) for friend in db.session.query(User).all()]
+    user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
+
+    messages_from = db.session.query(Messages)\
+        .filter((Messages.username_to == current_user.username) & (Messages.username_from == user_to_send))\
+        .order_by(Messages.id.desc()).limit(6)
+
+    messages_to = db.session.query(Messages)\
+        .filter((Messages.username_to == user_to_send) & (Messages.username_from == current_user.username))\
+        .order_by(Messages.id.desc()).limit(6)
 
     if chat_form.validate_on_submit():
         message = chat_form.text.data
-        user_to_send = chat_form.user_to_send.data
+        user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
-        new_message = Messages(username=user_to_send, message=message)
+        new_message = Messages(username_to=user_to_send, username_from=current_user.username, message=message)
         db.session.add(new_message)
         db.session.commit()
 
         chat_form.text.data = ""
 
-    return render_template('chat.html', form=chat_form, messages=messages_from)
+    #print(chat_form.errors)
+
+    return render_template('chat.html', form=chat_form, messages_to=messages_to,
+                           messages_from=messages_from, name=current_user.username)
 
 
 @app.route('/logout', methods=['GET'])

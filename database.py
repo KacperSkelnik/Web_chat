@@ -19,5 +19,6 @@ class Messages(Base):
 
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True)
-    username = Column(String(25), unique=False, nullable=False)
+    username_from = Column(String(25), unique=False, nullable=False)
+    username_to = Column(String(25), unique=False, nullable=False)
     message = Column(String(250), unique=False, nullable=False)

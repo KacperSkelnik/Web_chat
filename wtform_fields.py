@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField
 from wtforms.validators import InputRequired, Length, EqualTo, ValidationError
 
 from database import *
@@ -41,6 +41,8 @@ class LoginForm(FlaskForm):
 
 class ChatForm(FlaskForm):
     """ Logout form """
-    text = TextAreaField('Message', render_kw={"rows": 3, "cols": 50})
-    user_to_send = StringField('User to send', validators=[InputRequired(message="Username required")])
+    #friends = [(friend.id, friend.username) for friend in db.session.query(User).all()]
+
+    text = TextAreaField('message', render_kw={"rows": 3, "cols": 50})
     send_btton = SubmitField("Send")
+    friend = SelectField('friend', coerce=int, validate_choice=False)
