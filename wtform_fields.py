@@ -3,19 +3,13 @@ from wtforms import StringField, PasswordField, SubmitField, TextAreaField, Sele
 from wtforms.validators import InputRequired, Length, EqualTo, ValidationError
 
 from database import *
-from app import db
+
+def validate_login():
+    raise ValidationError("Username or password is incorrect")
 
 
-def validate_login(form, field):
-    password = field.data
-    username = form.username.data
-
-    user_object = db.session.query(User).filter_by(username=username).first()
-    if user_object is None:
-        raise ValidationError("Username or password is incorrect")
-    elif password != user_object.password:
-        raise ValidationError("Username or password is incorrect")
-
+def validate_username():
+    raise ValidationError("Username already exists.")
 
 class RegistrationForm(FlaskForm):
     """ Registration form """
@@ -27,17 +21,14 @@ class RegistrationForm(FlaskForm):
         EqualTo('password', message="Passwords must match")])
     submit_btton = SubmitField("Create")
 
-    def validate_username(self, username):
-        user_object = db.session.query(User).filter_by(username=username.data).first()
-        if user_object:
-            raise ValidationError("Username already exists.")
-
 
 class LoginForm(FlaskForm):
     """ Login form """
     username = StringField('username', validators=[InputRequired(message="Username required")])
-    password = PasswordField('password', validators=[InputRequired(message="Password required"), validate_login])
+    password = PasswordField('password', validators=[InputRequired(message="Password required")])
     login_btton = SubmitField("Login")
+
+
 
 class ChatForm(FlaskForm):
     """ Logout form """

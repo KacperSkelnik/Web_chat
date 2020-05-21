@@ -8,7 +8,7 @@ class Connection(object):
     DISCONNECT_MSG = "!DISC"
 
     PORT = 5050
-    SERVER = "192.168.0.18"  # local IP
+    SERVER = "192.168.0.248"  # local IP
     ADDR = (SERVER, PORT)  # Address
 
     try:
@@ -35,4 +35,12 @@ class Connection(object):
         send_length += b' ' * (self.HEADER - len(send_length))
         self.client.send(send_length)
         self.client.send(message)
-        print(self.client.recv(2048).decode(self.FORMAT))
+        #print(self.client.recv(2048).decode(self.FORMAT))
+
+    def recv(self):
+        msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)
+        if msg_length:
+            msg_length = int(msg_length)
+            msg = self.client.recv(msg_length).decode(self.FORMAT)
+
+        return msg

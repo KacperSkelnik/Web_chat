@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+	<meta charset="utf-8">
+	<title></title>
+</head>
+<body>
+	<!-- Navigation bar-->
+	<nav>
+		
+	</nav>
+
+	<div id="main-section">
+		<!-- Select Friend -->
+		<nav id="sidebar">
+			
+		</nav>
+
+		<!--Message area -->
+		<div id="rightside-panel">
+			<!--Display message-->
+			<div id="display-message-section">
+				
+			</div>
+			<!-- Input message-->
+			<div id="input-area">
+				<input type="text" id="user_message" placeholder="Type here..." autocomplete="off">
+				<button type="button" id="send_message">Send</button>
+			</div>
+		</div>
+	</div>
+	<!-- SocketIO JS -->
+	<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+
+	<!-- Custom SocketIO JS -->
+	<script src="C:/Users/wojty/SieciKomputerowe/Chat/Web_chat/static/scripts/socketio.js"></script>
+<!-- 	<script type="text/javascript" charset="utf-8">
+    var socket = io.connect('http://127.0.0.1:5000/');
+
+	socket.on('connect', () => {
+		socket.send("Iam connected");
+	});
+
+	socket.on('message', (data => {
+		console.log(`Message revived: ${data}`);
+	});
+	</script>
+ -->
+</body>
+</html>
