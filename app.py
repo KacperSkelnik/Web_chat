@@ -1,14 +1,11 @@
 from flask import Flask, render_template, redirect, url_for, request
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-# from flask_sqlalchemy import SQLAlchemy
 from connection import Connection
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from flask_sqlalchemy  import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 DISCONNECT_MESSAGE = "!DISCONNECT"
 Connection = Connection()
 Connection.connect()
-Connection.send("hello")
 
 # Configure application
 app = Flask(__name__)
@@ -19,30 +16,30 @@ app.config.update(dict(
 app.debug = True
 
 # Configure database
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# db = SQLAlchemy(app)
-engine = create_engine('sqlite:///users_server.db', echo=True)
-Session = sessionmaker(bind=engine)
-session = Session()
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users_client.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-@app.before_first_request
-def setup():
-    #Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-
+# Configure login manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 from wtform_fields import *
 
 
-# Configure flask_login
-login = LoginManager()
-login.init_app(app)
+# Create local data base to store info about login users
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(25), unique=True, nullable=False)
+    password = db.Column(db.String(), nullable=False)
 
 
-@login.user_loader
-def load_user(id):
-    return session.query(User).get(int(id))
+# Configure login decorator
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -56,9 +53,10 @@ def index():
         Connection.send(username)
         Connection.send(password)
 
-        if Connection.recv() == "exists":
-            validate_username()
-        elif Connection.recv() == "created":
+        if Connection.recv() == "created":
+            new_user = User(username=username, password=password)
+            db.session.add(new_user)
+            db.session.commit()
             return redirect(url_for('login'))
 
     return render_template('index.html', form=registration_form)
@@ -68,20 +66,10 @@ def index():
 def login():
     login_form = LoginForm()
     if login_form.validate_on_submit():
-        username = login_form.username.data
-        password = login_form.password.data
-
-        Connection.send("log")
-        Connection.send(username)
-        Connection.send(password)
-
-        if Connection.recv() == "incorrect":
-            validate_login()
-        elif Connection.recv() == "correct":
-            login_user(username)
+        if Connection.recv() == "correct":
+            user = User.query.filter_by(username=login_form.username.data).first()
+            login_user(user)
             return redirect(url_for('chat'))
-
-        #user_object = session.query(User).filter_by(username=login_form.username.data).first()
 
     return render_template("login.html", form=login_form)
 
@@ -89,6 +77,8 @@ def login():
 @app.route('/chat', methods=['POST', 'GET'])
 @login_required
 def chat():
+    print("kakak")
+    """
     chat_form = ChatForm()
     chat_form.friend.choices = [(friend.id, friend.username) for friend in session.query(User).all()]
     user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
@@ -119,6 +109,7 @@ def chat():
 
     return render_template('chat.html', form=chat_form, messages_to=messages_to,
                            messages_from=messages_from, name=current_user.username)
+"""
 
 
 @app.route('/logout', methods=['GET'])

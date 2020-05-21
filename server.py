@@ -1,43 +1,27 @@
 import socket
 import threading
-from flask import Flask
-# from flask_sqlalchemy import SQLAlchemy
+import pickle
 from database import Base,User,Messages
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-
-# Configure application
-server = Flask(__name__)
-server.config.update(dict(
-    SECRET_KEY="powerful secretkey",
-    WTF_CSRF_SECRET_KEY="a csrf secret key"
-))
-server.debug = True
-
 # Configure database
-# server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users_server.db'
-# server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# db = SQLAlchemy(server)
 engine = create_engine('sqlite:///users_server.db', echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 Base.metadata.create_all(bind=engine)
-
-    
-    
-
 
 HEADER = 64
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
 
 PORT = 5050
-SERVER = "192.168.0.248"  # local IP
+SERVER = "192.168.0.18"  # local IP
 ADDR = (SERVER, PORT) # Address
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create socket and pick type
 server.bind(ADDR) # bind socket to address
+
 
 def start():
     server.listen()
@@ -47,6 +31,7 @@ def start():
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print("Active connectors: ", threading.active_count() - 1)
+
 
 def handle_client(conn, addr):
     print(f"New connection : {addr}")
@@ -60,15 +45,51 @@ def handle_client(conn, addr):
             if msg == DISCONNECT_MESSAGE:
                 print("Client disconnected")
                 connected = False
+            elif msg == "user":
+                check_username(conn)
             elif msg == "reg":
                 registration(conn)
             elif msg == "log":
                 login(conn)
+            else:
+                handle_chat(conn)
 
             print(f"[{addr}] {msg}")
-            conn.send("Msg received".encode(FORMAT))
+            #conn.send("Msg received".encode(FORMAT))
 
     conn.close()
+
+
+def send(conn, msg):
+    message = msg.encode(FORMAT)
+    msg_length = len(message)
+    send_length = str(msg_length).encode(FORMAT)
+    send_length += b' ' * (HEADER - len(send_length))
+    conn.send(send_length)
+    conn.send(message)
+
+
+def send_pickle(conn, obj):
+    message = pickle.dumps(obj)
+    msg_length = len(message)
+    send_length = str(msg_length).encode(FORMAT)
+    send_length += b' ' * (HEADER - len(send_length))
+    conn.send(send_length)
+    conn.send(message)
+
+
+def check_username(conn):
+    msg_length = conn.recv(HEADER).decode(FORMAT)
+    if msg_length:
+        msg_length = int(msg_length)
+        msg = conn.recv(msg_length).decode(FORMAT)
+
+    user_object = session.query(Base.metadata.tables['users']).filter_by(username=msg).first()
+    if user_object:
+        send(conn, "exists")
+    else:
+        send(conn, "ok")
+
 
 def registration(conn):
     msg = []
@@ -78,13 +99,10 @@ def registration(conn):
             msg_length = int(msg_length)
             msg.append(conn.recv(msg_length).decode(FORMAT))
 
-    if session.query(Base.metadata.tables['users']).filter_by(username=msg[0]).first():
-        conn.send("exists".encode(FORMAT))
-    else:
-        user = User(username=msg[0], password=msg[1])
-        session.add(user)
-        session.commit()
-        conn.send("created".encode(FORMAT))
+    user = User(username=msg[0], password=msg[1])
+    session.add(user)
+    session.commit()
+    send(conn, "created")
 
 
 def login(conn):
@@ -97,15 +115,22 @@ def login(conn):
 
     user_object = session.query(Base.metadata.tables['users']).filter_by(username=msg[0]).first()
     if user_object is None:
-        conn.send("incorrect".encode(FORMAT))
+        send(conn, "incorrect")
     elif msg[1] != user_object.password:
-        conn.send("incorrect".encode(FORMAT))
+        send(conn, "incorrect")
     else:
-        conn.send("correct".encode(FORMAT))
+        send(conn, '')
+        send(conn, "correct")
+        send(conn, "ok")
+        #send(conn, "pickle")
+        #send_pickle(conn, session.query(Base.metadata.tables['users']).filter_by(username=msg[0]).first())
+
+
+def handle_chat(conn):
+    return 0
 
 
 
 if __name__ == '__main__':
     print("Server is starting")
     start()
-    server.run(debug=True)

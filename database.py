@@ -12,7 +12,7 @@ class User(UserMixin, Base):
 
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
-    username = Column(String(25), unique=True, nullable=False)
+    username = Column(String(25), unique=False, nullable=False)
     password = Column(String(), nullable=False)
 
 
