@@ -68,7 +68,14 @@ def login():
     if login_form.validate_on_submit():
         if Connection.recv() == "correct":
             user = User.query.filter_by(username=login_form.username.data).first()
-            login_user(user)
+            if user:
+                login_user(user)
+            else:
+                data = Connection.recv()
+                new_user = User(username=data[1], password=data[2])
+                db.session.add(new_user)
+                db.session.commit()
+                login_user(new_user)
             return redirect(url_for('chat'))
 
     return render_template("login.html", form=login_form)

@@ -121,14 +121,12 @@ def login(conn):
     else:
         send(conn, '')
         send(conn, "correct")
-        send(conn, "ok")
-        #send(conn, "pickle")
-        #send_pickle(conn, session.query(Base.metadata.tables['users']).filter_by(username=msg[0]).first())
+        send(conn, "pickle")
+        send_pickle(conn, session.query(Base.metadata.tables['users']).filter_by(username=msg[0]).first())
 
 
 def handle_chat(conn):
     return 0
-
 
 
 if __name__ == '__main__':
