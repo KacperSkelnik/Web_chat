@@ -61,6 +61,9 @@ def handle_client(conn, addr):
                 chat = True
             else:
                 print(f"[{addr}] {user[0]} send {msg} to {user[1]}")
+                new_message = Messages(username_to=user[1], username_from=user[0], message=msg)
+                session.add(new_message)
+                session.commit()
 
         #if user is not None:
         #    while chat:
