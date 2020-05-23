@@ -169,7 +169,7 @@ def handle_chat(conn):
         send(conn, "pickle")
         send_pickle(conn, [(0, user_to, user, "Nothing", date.today())])
 
-    return user
+    return user, user_to
 
 
 if __name__ == '__main__':
