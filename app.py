@@ -2,8 +2,9 @@ from flask import Flask, render_template, redirect, url_for, request
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import time
+import threading
 
-DISCONNECT_MESSAGE = "!DISCONNECT"
 Connection = Connection()
 Connection.connect()
 
@@ -69,6 +70,7 @@ def login():
         if Connection.recv() == "correct":
             user = User.query.filter_by(username=login_form.username.data).first()
             if user:
+                Connection.recv()
                 login_user(user)
             else:
                 data = Connection.recv()
@@ -81,48 +83,60 @@ def login():
     return render_template("login.html", form=login_form)
 
 
+def get_msg():
+    while True:
+        print(Connection.recv())
+
+
 @app.route('/chat', methods=['POST', 'GET'])
 @login_required
 def chat():
-    print("kakak")
-    """
+    Connection.send("chat")
+    Connection.send(current_user.username)
+
     chat_form = ChatForm()
-    chat_form.friend.choices = [(friend.id, friend.username) for friend in session.query(User).all()]
+    chat_form.friend.choices = Connection.recv()
+    chat_form.friend.default = chat_form.friend.choices[0]
+
     user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
-    messages_from = session.query(Messages)\
-        .filter((Messages.username_to == current_user.username) & (Messages.username_from == user_to_send))\
-        .order_by(Messages.id.desc()).limit(6)
+    if user_to_send:
+        Connection.send(user_to_send)
+        messages_from = Connection.recv()
+        messages_to = Connection.recv()
+    else:
+        Connection.send(" ")
+        messages_from = Connection.recv()
+        messages_to = Connection.recv()
 
-    messages_to = session.query(Messages)\
-        .filter((Messages.username_to == user_to_send) & (Messages.username_from == current_user.username))\
-        .order_by(Messages.id.desc()).limit(6)
+    #thread = threading.Thread(target=get_msg)
+    #thread.start()
 
     if chat_form.validate_on_submit():
         if request.form['action'] == 'Send':
             message = chat_form.text.data
-            user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
-            new_message = Messages(username_to=user_to_send, username_from=current_user.username,message=message)
-            session.add(new_message)
-            session.commit()
+            Connection.send(user_to_send)
+            Connection.send(message)
+
+            #new_message = Messages(username_to=user_to_send, username_from=current_user.username, message=message)
+            #session.add(new_message)
+            #session.commit()
 
             chat_form.text.data = ""
+
         if request.form['action'] == 'Select':
             return render_template('chat.html', form=chat_form, messages_to=messages_to,
                                    messages_from=messages_from, name=current_user.username)
 
-    #print(chat_form.errors)
-
     return render_template('chat.html', form=chat_form, messages_to=messages_to,
                            messages_from=messages_from, name=current_user.username)
-"""
 
 
 @app.route('/logout', methods=['GET'])
 def logout():
     logout_user()
-    Connection.send(DISCONNECT_MESSAGE)
+    Connection.send("!DISCONNECT")
     return "You are log out"
 
 

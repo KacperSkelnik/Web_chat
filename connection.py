@@ -4,7 +4,7 @@ import pickle
 
 
 class Connection(object):
-    HEADER = 64
+    HEADER = 10
     FORMAT = 'utf-8'
     DISCONNECT_MSG = "!DISC"
 

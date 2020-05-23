@@ -13,12 +13,12 @@
         </div>
         <ul id="messages_from">
             {% for msg in messages_from %}
-                <li>{{ msg.date }} "{{ msg.username_from  }}" send you "{{ msg.message }}"</li>
+                <li>{{ msg[4] }} "{{ msg[1]  }}" send you "{{ msg[3] }}"</li>
             {% endfor %}
         </ul>
         <ul id="messages_to">
             {% for msg in messages_to %}
-                <li>{{ msg.date }} You  send "{{ msg.message}}" to "{{ msg.username_to}}"</li>
+                <li>{{ msg[4] }} You  send "{{ msg[3] }}" to "{{ msg[1] }}"</li>
             {% endfor %}
         </ul>
         <div>

@@ -43,4 +43,4 @@ class LoginForm(FlaskForm):
 class ChatForm(FlaskForm):
     """ Chat form """
     text = TextAreaField('message', render_kw={"rows": 3, "cols": 50})
-    friend = SelectField('friend', coerce=int, validate_choice=False)
+    friend = SelectField(u'friend', coerce=int, validate_choice=False)
