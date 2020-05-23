@@ -1,10 +1,11 @@
 import socket
 import threading
 import pickle
-from database import Base,User,Messages
+from database import Base, User, Messages
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import date
+import time
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', echo=True)
@@ -17,7 +18,7 @@ FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
 
 PORT = 5050
-SERVER = "192.168.0.18"  # local IP
+SERVER = socket.gethostbyname(socket.gethostname())  # local IP
 ADDR = (SERVER, PORT) # Address
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create socket and pick type
@@ -49,6 +50,7 @@ def handle_client(conn, addr):
             if msg == DISCONNECT_MESSAGE:
                 print("Client disconnected")
                 conn.close()
+                chat = False
                 connected = False
             elif msg == "user":
                 check_username(conn)
@@ -65,11 +67,26 @@ def handle_client(conn, addr):
                 session.add(new_message)
                 session.commit()
 
-        #if user is not None:
-        #    while chat:
-        #        #print('lalal')
-        #        #send(conn, "lalalal")
-        #        time.sleep(5)
+        """
+        if user is not None:
+            while chat:
+                print("halka",user[0])
+                messages_from = session.query(Messages).filter((Messages.username_to == user[0]) & (Messages.username_from == user[1])) \
+                                 .order_by(Messages.id.desc()).all()
+                messages_to = session.query(Messages).filter((Messages.username_to == user[1]) & (Messages.username_from == user[0])) \
+                               .order_by(Messages.id.desc()).all()
+
+                print(messages_from)
+                print(messages_to)
+                time.sleep(5)
+                
+                if user[2] != messages_from:
+                    send(conn, messages_from)
+                    user[2] = messages_from
+                elif user[3] != messages_to:
+                    send(conn, messages_to)
+                    user[3] = messages_to
+                """
 
 
 def send(conn, msg):
@@ -172,7 +189,7 @@ def handle_chat(conn):
         send(conn, "pickle")
         send_pickle(conn, [(0, user_to, user, "Nothing", date.today())])
 
-    return user, user_to
+    return user, user_to, messages_from, messages_to
 
 
 if __name__ == '__main__':

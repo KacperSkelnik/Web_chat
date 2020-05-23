@@ -2,7 +2,6 @@ from flask import Flask, render_template, redirect, url_for, request
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import time
 import threading
 
 Connection = Connection()
@@ -83,9 +82,10 @@ def login():
     return render_template("login.html", form=login_form)
 
 
-def get_msg():
+def get_msg(messages_from,messages_to):
     while True:
-        print(Connection.recv())
+        messages_from.append(Connection.recv())
+        messages_to.append(Connection.recv())
 
 
 @app.route('/chat', methods=['POST', 'GET'])
@@ -109,15 +109,19 @@ def chat():
         messages_from = Connection.recv()
         messages_to = Connection.recv()
 
-    #thread = threading.Thread(target=get_msg)
+    #thread = threading.Thread(target=get_msg, args=(messages_from, messages_to))
     #thread.start()
+
+        #messages_from.append(Connection.recv())
+        #messages_to.append(Connection.recv())
 
     if chat_form.validate_on_submit():
         if request.form['action'] == 'Send':
             message = chat_form.text.data
 
-            Connection.send(user_to_send)
-            Connection.send(message)
+            if message != "":
+                Connection.send(user_to_send)
+                Connection.send(message)
 
             #new_message = Messages(username_to=user_to_send, username_from=current_user.username, message=message)
             #session.add(new_message)
@@ -127,10 +131,10 @@ def chat():
 
         if request.form['action'] == 'Select':
             return render_template('chat.html', form=chat_form, messages_to=messages_to,
-                                   messages_from=messages_from, name=current_user.username)
+                                       messages_from=messages_from, name=current_user.username)
 
     return render_template('chat.html', form=chat_form, messages_to=messages_to,
-                           messages_from=messages_from, name=current_user.username)
+                               messages_from=messages_from, name=current_user.username)
 
 
 @app.route('/logout', methods=['GET'])

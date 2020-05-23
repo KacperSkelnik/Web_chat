@@ -9,7 +9,7 @@ class Connection(object):
     DISCONNECT_MSG = "!DISC"
 
     PORT = 5050
-    SERVER = "192.168.0.18"  # local IP
+    SERVER = socket.gethostbyname(socket.gethostname()) # local IP
     ADDR = (SERVER, PORT)  # Address
 
     try:

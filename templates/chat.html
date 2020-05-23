@@ -21,13 +21,13 @@
                 <li>{{ msg[4] }} You  send "{{ msg[3] }}" to "{{ msg[1] }}"</li>
             {% endfor %}
         </ul>
-        <div>
-            {{ form.text(class_='form-control',
-                    placeholder='Message',
-                    autocomplete='off',
-                    autofocus=true) }} <input type ="submit" name="action" value="Send">
-            <h1></h1>
-        </div>
+            <div>
+                {{ form.text(class_='form-control',
+                        placeholder='Message',
+                        autocomplete='off',
+                        autofocus=true) }} <input type ="submit" name="action" value="Send">
+                <h1></h1>
+            </div>
         <div>
             <h1></h1>
             <a href="/logout">Logout</a>
