@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField
 from wtforms.validators import InputRequired, Length, EqualTo, ValidationError
 from app import Connection
+from flask_login import current_user
 
 
 def validate_login(form, field):
@@ -52,8 +53,17 @@ class FriendsForm(FlaskForm):
     submit_btton = SubmitField("invite")
 
     def validate_username(self, username):
-        Connection.send("user")
+        Connection.send("friend")
         Connection.send(username.data)
         if Connection.recv() == "ok":
             raise ValidationError("Username dont exists. Try with different username.")
+        else:
+            pass
 
+        Connection.send(current_user.username)
+        Connection.send(username.data)
+
+        if Connection.recv() == "is_friend":
+            raise ValidationError("User is already your friend")
+        else:
+            pass

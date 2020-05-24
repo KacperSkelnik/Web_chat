@@ -2,7 +2,6 @@ from flask import Flask, render_template, redirect, url_for, request, jsonify, m
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from datetime import datetime
 
 Connection = Connection()
 Connection.connect()
@@ -101,6 +100,7 @@ def chat():
     user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
     if user_to_send:
+        user_to_send = user_to_send.split()[1]
         Connection.send(user_to_send)
         messages_from = Connection.recv()
         messages_to = Connection.recv()
@@ -143,16 +143,8 @@ def friends():
     friends_form = FriendsForm()
 
     if friends_form.validate_on_submit():
-        username = friends_form.username.data
-
-        Connection.send("friend")
-        Connection.send(current_user.username)
-        Connection.send(username)
-
         if Connection.recv() == "added":
             return redirect(url_for('chat'))
-
-        return redirect(url_for('chat'))
 
     return render_template("friends.html", form=friends_form)
 

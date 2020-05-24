@@ -4,8 +4,7 @@ import pickle
 from database import Base, User, Messages, Friends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import date
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', echo=True)
@@ -64,6 +63,7 @@ def handle_client(conn, addr):
                 user = handle_chat(conn)
                 clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
             elif msg == "friend":
+                check_username(conn)
                 add_friend(conn)
             else:
                 #print(f"[{addr}] {user[0]} send {msg} to {user[1]}")
@@ -166,7 +166,13 @@ def handle_chat(conn):
         user_length = int(user_length)
         user = conn.recv(user_length).decode(FORMAT)
 
-    friends = [("0", "---")] + [(friend.id, friend.username) for friend in session.query(User).all()]
+    friends = [("0", "---")]
+    for friend in session.query(Friends).filter(Friends.username1 == user):
+        if friend.username2 in [x[1] for x in clients]:
+            friends += [(friend.id, "online "+friend.username2)]
+        else:
+            friends += [(friend.id, "offline "+friend.username2)]
+    #friends = [("0", "---")] + [(friend.id, friend.username2) for friend in session.query(Friends).filter(Friends.username1 == user)]
     send(conn, "pickle")
     send_pickle(conn, friends)
 
@@ -206,10 +212,16 @@ def add_friend(conn):
             msg_length = int(msg_length)
             msg.append(conn.recv(msg_length).decode(FORMAT))
 
-    friends = Friends(username1=msg[0], username2=msg[1])
-    session.add(friends)
-    session.commit()
-    send(conn, "added")
+    user_object = session.query(Friends).filter((Friends.username1 == msg[0]) & (Friends.username2 == msg[1])) \
+        .order_by(Friends.id.desc()).first()
+    if not user_object:
+        friends = Friends(username1=msg[0], username2=msg[1])
+        session.add(friends)
+        session.commit()
+        send(conn, "")
+        send(conn, "added")
+    else:
+        send(conn, "is_friend")
 
 
 if __name__ == '__main__':
