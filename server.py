@@ -80,7 +80,7 @@ def handle_client(conn, addr):
                 user = handle_chat(conn)
                 clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
             elif msg == FRIENDS:
-                check_username(conn)
+                #check_username(conn)
                 add_friend(conn)
             else:
                 new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
@@ -206,7 +206,7 @@ def add_friend(conn):
 
     user_object = session.query(Friends).filter((Friends.username1 == msg[0]) & (Friends.username2 == msg[1])) \
         .order_by(Friends.id.desc()).first()
-    if not user_object:
+    if not user_object and msg[0] != msg[1]:
         friends = Friends(username1=msg[0], username2=msg[1])
         session.add(friends)
         session.commit()

@@ -69,17 +69,17 @@ class FriendsForm(FlaskForm):
     submit_btton = SubmitField("invite")
 
     def validate_username(self, username):
-        Connection.send(FRIENDS)
+        Connection.send(USER)
         Connection.send(username.data)
         if Connection.recv() == OK:
             raise ValidationError("Username dont exists. Try with different username.")
         else:
-            pass
+            Connection.send(FRIENDS)
 
-        Connection.send(current_user.username)
-        Connection.send(username.data)
+            Connection.send(current_user.username)
+            Connection.send(username.data)
 
-        if Connection.recv() == IS_FRIEND:
-            raise ValidationError("User is already your friend")
-        else:
-            pass
+            if Connection.recv() == IS_FRIEND:
+                raise ValidationError("User is already your friend")
+            else:
+                pass

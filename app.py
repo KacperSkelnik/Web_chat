@@ -111,7 +111,6 @@ def chat():
         chat_form = ChatForm()
         chat_form.friend.choices = Connection.recv()
         chat_form.friend.default = chat_form.friend.choices[0]
-
         user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
         if user_to_send:
