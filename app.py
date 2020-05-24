@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify, make_response
+from flask import Flask, render_template, redirect, url_for, request
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -112,18 +112,11 @@ def chat():
     messages = messages_from + messages_to
     messages.sort(key=lambda x:x[4])
 
-    #thread = threading.Thread(target=get_msg, args=(messages_from, messages_to))
-    #thread.start()
-
-    #messages_from.append(Connection.recv())
-    #messages_to.append(Connection.recv())
-
     if chat_form.validate_on_submit():
         if request.form['action'] == 'Send':
             message = chat_form.text.data
             if message != "":
                 if user_to_send:
-                    Connection.send(user_to_send)
                     Connection.send(message)
 
             chat_form.text.data = ""

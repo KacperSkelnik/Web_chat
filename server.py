@@ -66,34 +66,10 @@ def handle_client(conn, addr):
                 check_username(conn)
                 add_friend(conn)
             else:
-                #print(f"[{addr}] {user[0]} send {msg} to {user[1]}")
                 new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
                 session.add(new_message)
                 session.commit()
         print(msg)
-        print(clients)
-
-        """
-        if user is not None:
-            while chat:
-                print("halka",user[0])
-                messages_from = session.query(Messages).filter((Messages.username_to == user[0]) & (Messages.username_from == user[1])) \
-                                 .order_by(Messages.id.desc()).all()
-                messages_to = session.query(Messages).filter((Messages.username_to == user[1]) & (Messages.username_from == user[0])) \
-                               .order_by(Messages.id.desc()).all()
-
-                print(messages_from)
-                print(messages_to)
-                time.sleep(5)
-                
-                if user[2] != messages_from:
-                    send(conn, messages_from)
-                    user[2] = messages_from
-                elif user[3] != messages_to:
-                    send(conn, messages_to)
-                    user[3] = messages_to
-                """
-
 
 def send(conn, msg):
     message = msg.encode(FORMAT)
@@ -172,7 +148,6 @@ def handle_chat(conn):
             friends += [(friend.id, "online "+friend.username2)]
         else:
             friends += [(friend.id, "offline "+friend.username2)]
-    #friends = [("0", "---")] + [(friend.id, friend.username2) for friend in session.query(Friends).filter(Friends.username1 == user)]
     send(conn, "pickle")
     send_pickle(conn, friends)
 
