@@ -2,6 +2,26 @@ from flask import Flask, render_template, redirect, url_for, request
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import time
+
+REGISTRATION = "!726567697374726174696f6e" # !HEX
+CREATED = "!63726561746564"
+LOGIN = "!6c6f67696e"
+CORRECT = "!636f7272656374"
+CHAT = "!636861745f746f"
+NOTHING = "!6e6f7468696e67"
+SEND = "!53656e6453656e64"
+FRIENDS = "!667269656e6473"
+ADDED = "!6164646564206164646564"
+DISCONNECT = "!444953434f4e4e454354"
+INCORRECT = "!696e636f7272656374"
+USER = "!555345525f5f5f55534552"
+EXIST = "!45584953545f5f4558495354"
+OK = "!4f4b5f4f4ba"
+IS_FRIEND = "!69735f667269656e64"
+
+forbidden = [REGISTRATION, CREATED, LOGIN, CORRECT, CHAT, NOTHING, SEND, FRIENDS,
+             ADDED, DISCONNECT, INCORRECT, USER, EXIST, OK, IS_FRIEND]
 
 Connection = Connection()
 Connection.connect()
@@ -48,11 +68,11 @@ def index():
         username = registration_form.username.data
         password = registration_form.password.data
 
-        Connection.send("reg")
+        Connection.send(REGISTRATION)
         Connection.send(username)
         Connection.send(password)
 
-        if Connection.recv() == "created":
+        if Connection.recv() == CREATED:
             new_user = User(username=username, password=password)
             db.session.add(new_user)
             db.session.commit()
@@ -65,7 +85,7 @@ def index():
 def login():
     login_form = LoginForm()
     if login_form.validate_on_submit():
-        if Connection.recv() == "correct":
+        if Connection.recv() == CORRECT:
             user = User.query.filter_by(username=login_form.username.data).first()
             if user:
                 Connection.recv()
@@ -81,53 +101,49 @@ def login():
     return render_template("login.html", form=login_form)
 
 
-def get_msg(messages_from,messages_to):
-    while True:
-        messages_from.append(Connection.recv())
-        messages_to.append(Connection.recv())
-
-
 @app.route('/chat', methods=['POST', 'GET'])
 @login_required
 def chat():
-    Connection.send("chat")
-    Connection.send(current_user.username)
+    while True:
+        Connection.send(CHAT)
+        Connection.send(current_user.username)
 
-    chat_form = ChatForm()
-    chat_form.friend.choices = Connection.recv()
-    chat_form.friend.default = chat_form.friend.choices[0]
+        chat_form = ChatForm()
+        chat_form.friend.choices = Connection.recv()
+        chat_form.friend.default = chat_form.friend.choices[0]
 
-    user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
+        user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
-    if user_to_send:
-        user_to_send = user_to_send.split()[1]
-        Connection.send(user_to_send)
-        messages_from = Connection.recv()
-        messages_to = Connection.recv()
-    else:
-        Connection.send(" ")
-        messages_from = Connection.recv()
-        messages_to = Connection.recv()
+        if user_to_send:
+            user_to_send = user_to_send.split()[1]
+            Connection.send(user_to_send)
+            messages_from = Connection.recv()
+            messages_to = Connection.recv()
+        else:
+            Connection.send("server")
+            messages_from = Connection.recv()
+            messages_to = Connection.recv()
 
-    messages = messages_from + messages_to
-    messages.sort(key=lambda x:x[4])
+        messages = messages_from + messages_to
+        messages.sort(key=lambda x:x[4])
 
-    if chat_form.validate_on_submit():
-        if request.form['action'] == 'Send':
-            message = chat_form.text.data
-            if message != "":
-                if user_to_send:
-                    Connection.send(message)
+        if chat_form.validate_on_submit():
+            if request.form['action'] == 'Send':
+                message = chat_form.text.data
+                if message != "" and message not in forbidden:
+                    if user_to_send:
+                        Connection.send(message)
 
-            chat_form.text.data = ""
+                chat_form.text.data = ""
 
-        if request.form['action'] == 'Select':
-            return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
+            if request.form['action'] == 'Select':
+                return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
 
-        if request.form['action'] == 'Add new friend':
-            return redirect(url_for('friends'))
+            if request.form['action'] == 'Add new friend':
+                return redirect(url_for('friends'))
 
-    return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
+        time.sleep(0.1)
+        return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
 
 
 @app.route('/friends', methods=['POST', 'GET'])
@@ -136,7 +152,7 @@ def friends():
     friends_form = FriendsForm()
 
     if friends_form.validate_on_submit():
-        if Connection.recv() == "added":
+        if Connection.recv() == ADDED:
             return redirect(url_for('chat'))
 
     return render_template("friends.html", form=friends_form)
@@ -145,7 +161,7 @@ def friends():
 @app.route('/logout', methods=['GET'])
 def logout():
     logout_user()
-    Connection.send("!DISCONNECT")
+    Connection.send(DISCONNECT)
     return "You are log out"
 
 

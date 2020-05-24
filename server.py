@@ -25,6 +25,23 @@ server.bind(ADDR) # bind socket to address
 
 clients = []
 
+REGISTRATION = "!726567697374726174696f6e" # !HEX
+CREATED = "!63726561746564"
+LOGIN = "!6c6f67696e"
+CORRECT = "!636f7272656374"
+CHAT = "!636861745f746f"
+NOTHING = "!6e6f7468696e67"
+SEND = "!53656e6453656e64"
+FRIENDS = "!667269656e6473"
+ADDED = "!6164646564206164646564"
+DISCONNECT = "!444953434f4e4e454354"
+INCORRECT = "!696e636f7272656374"
+USER = "!555345525f5f5f55534552"
+EXIST = "!45584953545f5f4558495354"
+OK = "!4f4b5f4f4ba"
+IS_FRIEND = "!69735f667269656e64"
+PICKLE = "!5049434b4c455f5f76617364"
+
 def start():
     server.listen()
     print(f"Server is listening on {SERVER}")
@@ -53,16 +70,16 @@ def handle_client(conn, addr):
                 clients.remove((conn, user[0]))
                 conn.close()
                 connected = False
-            elif msg == "user":
+            elif msg == USER:
                 check_username(conn)
-            elif msg == "reg":
+            elif msg == REGISTRATION:
                 registration(conn)
-            elif msg == "log":
+            elif msg == LOGIN:
                 login(conn)
-            elif msg == "chat":
+            elif msg == CHAT:
                 user = handle_chat(conn)
                 clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
-            elif msg == "friend":
+            elif msg == FRIENDS:
                 check_username(conn)
                 add_friend(conn)
             else:
@@ -97,9 +114,9 @@ def check_username(conn):
 
     user_object = session.query(Base.metadata.tables['users']).filter_by(username=msg).first()
     if user_object:
-        send(conn, "exists")
+        send(conn, EXIST)
     else:
-        send(conn, "ok")
+        send(conn, OK)
 
 
 def registration(conn):
@@ -113,7 +130,7 @@ def registration(conn):
     user = User(username=msg[0], password=msg[1])
     session.add(user)
     session.commit()
-    send(conn, "created")
+    send(conn, CREATED)
 
 
 def login(conn):
@@ -126,13 +143,13 @@ def login(conn):
 
     user_object = session.query(Base.metadata.tables['users']).filter_by(username=msg[0]).first()
     if user_object is None:
-        send(conn, "incorrect")
+        send(conn, INCORRECT)
     elif msg[1] != user_object.password:
-        send(conn, "incorrect")
+        send(conn, INCORRECT)
     else:
-        send(conn, '')
-        send(conn, "correct")
-        send(conn, "pickle")
+        send(conn, NOTHING)
+        send(conn, CORRECT)
+        send(conn, PICKLE)
         send_pickle(conn, session.query(Base.metadata.tables['users']).filter_by(username=msg[0]).first())
 
 
@@ -148,7 +165,7 @@ def handle_chat(conn):
             friends += [(friend.id, "online "+friend.username2)]
         else:
             friends += [(friend.id, "offline "+friend.username2)]
-    send(conn, "pickle")
+    send(conn, PICKLE)
     send_pickle(conn, friends)
 
     user_to_length = conn.recv(HEADER).decode(FORMAT)
@@ -160,20 +177,20 @@ def handle_chat(conn):
         .filter((Messages.username_to == user) & (Messages.username_from == user_to)) \
         .order_by(Messages.id.desc()).limit(6)]
     if messages_from:
-        send(conn, "pickle")
+        send(conn, PICKLE)
         send_pickle(conn, messages_from)
     else:
-        send(conn, "pickle")
+        send(conn, PICKLE)
         send_pickle(conn, [(0, user_to, user, "There is no any messages", datetime.now())])
 
     messages_to = [(msg.id, msg.username_from, msg.username_to, msg.message, msg.date) for msg in session.query(Messages) \
         .filter((Messages.username_to == user_to) & (Messages.username_from == user)) \
         .order_by(Messages.id.desc()).limit(6)]
     if messages_to:
-        send(conn, "pickle")
+        send(conn, PICKLE)
         send_pickle(conn, messages_to)
     else:
-        send(conn, "pickle")
+        send(conn, PICKLE)
         send_pickle(conn, [(0, user, user_to, "Nothing", datetime.now())])
 
     return user, user_to, messages_from, messages_to
@@ -193,10 +210,10 @@ def add_friend(conn):
         friends = Friends(username1=msg[0], username2=msg[1])
         session.add(friends)
         session.commit()
-        send(conn, "")
-        send(conn, "added")
+        send(conn, NOTHING)
+        send(conn, ADDED)
     else:
-        send(conn, "is_friend")
+        send(conn, IS_FRIEND)
 
 
 if __name__ == '__main__':
