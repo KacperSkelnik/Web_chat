@@ -9,23 +9,27 @@
             {{ form.friend(class_='form-control',
                     placeholder='Username',
                     autocomplete='off',
-                    autofocus=true) }} <input type ="submit" name="action" value="Select">
+                    autofocus=true) }}
+            <input type ="submit" name="action" value="Select">
+            <input type ="submit" name="action" value="Add new friend">
         </div>
-        <ul id="messages_from">
-            {% for msg in messages_from %}
-                <li>{{ msg[4] }} "{{ msg[1]  }}" send you "{{ msg[3] }}"</li>
-            {% endfor %}
-        </ul>
-        <ul id="messages_to">
-            {% for msg in messages_to %}
-                <li>{{ msg[4] }} You  send "{{ msg[3] }}" to "{{ msg[1] }}"</li>
+        <ul id="messages", class="parent">
+            {% for msg in messages%}
+                {% if msg[2] == name %}
+                    <li style="color:#000000">{{ (msg[4]|string())[11:19] }} {{ msg[1]  }} : {{ msg[3] }}</li>
+                {% elif msg[2] != name %}
+                    <li style="color:#0048ff; justify-content: flex-end">{{ msg[3] }} : {{ name }} {{ (msg[4]|string())[11:19] }}</li>
+                {% endif %}
             {% endfor %}
         </ul>
             <div>
                 {{ form.text(class_='form-control',
                         placeholder='Message',
                         autocomplete='off',
-                        autofocus=true) }} <input type ="submit" name="action" value="Send">
+                        autofocus=true) }}
+            </div>
+            <div>
+                <input type ="submit" name="action" value="Send">
                 <h1></h1>
             </div>
         <div>

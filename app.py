@@ -1,8 +1,8 @@
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, jsonify, make_response
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import threading
+from datetime import datetime
 
 Connection = Connection()
 Connection.connect()
@@ -109,32 +109,52 @@ def chat():
         messages_from = Connection.recv()
         messages_to = Connection.recv()
 
+    messages = messages_from + messages_to
+    messages.sort(key=lambda x:x[4])
+
     #thread = threading.Thread(target=get_msg, args=(messages_from, messages_to))
     #thread.start()
 
-        #messages_from.append(Connection.recv())
-        #messages_to.append(Connection.recv())
+    #messages_from.append(Connection.recv())
+    #messages_to.append(Connection.recv())
 
     if chat_form.validate_on_submit():
         if request.form['action'] == 'Send':
             message = chat_form.text.data
-
             if message != "":
-                Connection.send(user_to_send)
-                Connection.send(message)
-
-            #new_message = Messages(username_to=user_to_send, username_from=current_user.username, message=message)
-            #session.add(new_message)
-            #session.commit()
+                if user_to_send:
+                    Connection.send(user_to_send)
+                    Connection.send(message)
 
             chat_form.text.data = ""
 
         if request.form['action'] == 'Select':
-            return render_template('chat.html', form=chat_form, messages_to=messages_to,
-                                       messages_from=messages_from, name=current_user.username)
+            return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
 
-    return render_template('chat.html', form=chat_form, messages_to=messages_to,
-                               messages_from=messages_from, name=current_user.username)
+        if request.form['action'] == 'Add new friend':
+            return redirect(url_for('friends'))
+
+    return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
+
+
+@app.route('/friends', methods=['POST', 'GET'])
+@login_required
+def friends():
+    friends_form = FriendsForm()
+
+    if friends_form.validate_on_submit():
+        username = friends_form.username.data
+
+        Connection.send("friend")
+        Connection.send(current_user.username)
+        Connection.send(username)
+
+        if Connection.recv() == "added":
+            return redirect(url_for('chat'))
+
+        return redirect(url_for('chat'))
+
+    return render_template("friends.html", form=friends_form)
 
 
 @app.route('/logout', methods=['GET'])

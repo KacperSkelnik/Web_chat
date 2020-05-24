@@ -1,0 +1,24 @@
+{% extends "body.html" %}
+
+{% block head %} <title>Communicator</title> {% endblock %}
+
+{% block body %}
+<form action="{{ url_for('friends') }}", method="POST">
+        <div>
+            {{ form.username(class_='form-control',
+                    placeholder='Username',
+                    autocomplete='off',
+                    autofocus=true) }}
+            <ul>
+                {% for error in form.username.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            {{ form.submit_btton }}
+        </div>
+
+        {{ form.csrf_token }}
+</form>
+{% endblock %}

@@ -44,3 +44,16 @@ class ChatForm(FlaskForm):
     """ Chat form """
     text = TextAreaField('message', render_kw={"rows": 3, "cols": 50})
     friend = SelectField(u'friend', coerce=int, validate_choice=False)
+
+
+class FriendsForm(FlaskForm):
+    """ Friend form """
+    username = StringField('username', validators=[InputRequired(message="Username required")])
+    submit_btton = SubmitField("invite")
+
+    def validate_username(self, username):
+        Connection.send("user")
+        Connection.send(username.data)
+        if Connection.recv() == "ok":
+            raise ValidationError("Username dont exists. Try with different username.")
+

@@ -1,11 +1,11 @@
 import socket
 import threading
 import pickle
-from database import Base, User, Messages
+from database import Base, User, Messages, Friends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import date
-import time
+from datetime import datetime, timedelta
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', echo=True)
@@ -24,24 +24,26 @@ ADDR = (SERVER, PORT) # Address
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create socket and pick type
 server.bind(ADDR) # bind socket to address
 
+clients = []
 
 def start():
     server.listen()
     print(f"Server is listening on {SERVER}")
-    #threads = []
     while True:
         conn, addr = server.accept()
-        #threads.append(threading.Thread(target=handle_client, args=(conn, addr)).start())
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print("Active connectors: ", threading.active_count() - 1)
+
+    for a, b in clients:
+        if a == conn:
+            clients.remove((a, b))
 
 
 def handle_client(conn, addr):
     print(f"New connection : {addr}")
     user = None
     connected = True
-    chat = False
     while connected:
         msg_length = conn.recv(HEADER).decode(FORMAT)
         if msg_length:
@@ -49,8 +51,8 @@ def handle_client(conn, addr):
             msg = conn.recv(msg_length).decode(FORMAT)
             if msg == DISCONNECT_MESSAGE:
                 print("Client disconnected")
+                clients.remove((conn, user[0]))
                 conn.close()
-                chat = False
                 connected = False
             elif msg == "user":
                 check_username(conn)
@@ -60,12 +62,16 @@ def handle_client(conn, addr):
                 login(conn)
             elif msg == "chat":
                 user = handle_chat(conn)
-                chat = True
+                clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
+            elif msg == "friend":
+                add_friend(conn)
             else:
-                print(f"[{addr}] {user[0]} send {msg} to {user[1]}")
-                new_message = Messages(username_to=user[1], username_from=user[0], message=msg)
+                #print(f"[{addr}] {user[0]} send {msg} to {user[1]}")
+                new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
                 session.add(new_message)
                 session.commit()
+        print(msg)
+        print(clients)
 
         """
         if user is not None:
@@ -177,7 +183,7 @@ def handle_chat(conn):
         send_pickle(conn, messages_from)
     else:
         send(conn, "pickle")
-        send_pickle(conn, [(0, user_to, user, "There is no any messages", date.today())])
+        send_pickle(conn, [(0, user_to, user, "There is no any messages", datetime.now())])
 
     messages_to = [(msg.id, msg.username_from, msg.username_to, msg.message, msg.date) for msg in session.query(Messages) \
         .filter((Messages.username_to == user_to) & (Messages.username_from == user)) \
@@ -187,9 +193,23 @@ def handle_chat(conn):
         send_pickle(conn, messages_to)
     else:
         send(conn, "pickle")
-        send_pickle(conn, [(0, user_to, user, "Nothing", date.today())])
+        send_pickle(conn, [(0, user, user_to, "Nothing", datetime.now())])
 
     return user, user_to, messages_from, messages_to
+
+
+def add_friend(conn):
+    msg = []
+    for i in range(2):
+        msg_length = conn.recv(HEADER).decode(FORMAT)
+        if msg_length:
+            msg_length = int(msg_length)
+            msg.append(conn.recv(msg_length).decode(FORMAT))
+
+    friends = Friends(username1=msg[0], username2=msg[1])
+    session.add(friends)
+    session.commit()
+    send(conn, "added")
 
 
 if __name__ == '__main__':
