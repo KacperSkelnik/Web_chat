@@ -5,7 +5,6 @@ from database import Base, User, Messages, Friends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import time
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', echo=True)
@@ -41,6 +40,7 @@ EXIST = "!45584953545f5f4558495354"
 OK = "!4f4b5f4f4ba"
 IS_FRIEND = "!69735f667269656e64"
 PICKLE = "!5049434b4c455f5f76617364"
+READY = "72656164795f5f7265616479"
 
 
 def start():
@@ -83,10 +83,9 @@ def handle_client(conn, addr):
                     clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
                 elif msg == FRIENDS:
                     add_friend(conn)
-                elif msg == "ready":
+                elif msg == READY:
                     if user:
-                        send(conn, PICKLE)
-                        send_pickle(conn, user)
+                        message_handel(conn, user[1], user[0])
                 else:
                     new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
                     session.add(new_message)
@@ -180,31 +179,35 @@ def handle_chat(conn):
         user_to_length = int(user_to_length)
         user_to = conn.recv(user_to_length).decode(FORMAT)
 
-    messages_from = [(msg.id, msg.username_from, msg.username_to, msg.message, msg.date) for msg in session.query(Messages) \
-        .filter((Messages.username_to == user) & (Messages.username_from == user_to)) \
-        .order_by(Messages.id.desc()).limit(6)]
+    return message_handel(conn, user_to, user)
+
+
+def message_handel(conn, user_to, user):
+    messages_from = [(msg.id, msg.username_from, msg.username_to, msg.message, msg.date) for msg in
+                     session.query(Messages) \
+                         .filter((Messages.username_to == user) & (Messages.username_from == user_to)) \
+                         .order_by(Messages.id.desc()).limit(6)]
     if messages_from:
         send(conn, PICKLE)
         send_pickle(conn, messages_from)
     else:
+        messages_from = [(0, user_to, user, "There is no any messages", datetime.now())]
         send(conn, PICKLE)
-        send_pickle(conn, [(0, user_to, user, "There is no any messages", datetime.now())])
+        send_pickle(conn, messages_from)
 
-    messages_to = [(msg.id, msg.username_from, msg.username_to, msg.message, msg.date) for msg in session.query(Messages) \
-        .filter((Messages.username_to == user_to) & (Messages.username_from == user)) \
-        .order_by(Messages.id.desc()).limit(6)]
+    messages_to = [(msg.id, msg.username_from, msg.username_to, msg.message, msg.date) for msg in
+                   session.query(Messages) \
+                       .filter((Messages.username_to == user_to) & (Messages.username_from == user)) \
+                       .order_by(Messages.id.desc()).limit(6)]
     if messages_to:
         send(conn, PICKLE)
         send_pickle(conn, messages_to)
     else:
+        messages_to = [(0, user, user_to, "Nothing", datetime.now())]
         send(conn, PICKLE)
-        send_pickle(conn, [(0, user, user_to, "Nothing", datetime.now())])
+        send_pickle(conn, messages_to)
 
     return user, user_to, messages_from, messages_to
-
-
-def update_chat():
-    return 0
 
 
 def add_friend(conn):

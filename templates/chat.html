@@ -1,6 +1,18 @@
 {% extends "body.html" %}
 
-{% block head %} <title>Communicator</title> {% endblock %}
+{% block head %}
+    <title>Communicator</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript">
+    setInterval("my_function();",1000);
+    function my_function(){
+      //var old_element = document.querySelector('#board');
+      //var new_element
+        $("#board").load("get_messages #board");
+      //old_element.replaceWith(new_element);
+    }
+    </script>
+{% endblock %}
 
 {% block body %}
     <form action="{{ url_for('chat') }}", method="POST">
@@ -13,7 +25,8 @@
             <input type ="submit" name="action" value="Select">
             <input type ="submit" name="action" value="Add new friend">
         </div>
-        <ul id="messages", class="parent">
+        <div id="board">
+            <ul id="messages", class="parent">
             {% for msg in messages%}
                 {% if msg[2] == name %}
                     <li style="color:#000000">{{ (msg[4]|string())[11:19] }} {{ msg[1]  }} : {{ msg[3] }}</li>
@@ -22,6 +35,8 @@
                 {% endif %}
             {% endfor %}
         </ul>
+        </div>
+
             <div>
                 {{ form.text(class_='form-control',
                         placeholder='Message',

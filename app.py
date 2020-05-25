@@ -2,7 +2,6 @@ from flask import Flask, render_template, redirect, url_for, request
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import threading, queue
 import time
 
 REGISTRATION = "!726567697374726174696f6e" # !HEX
@@ -20,9 +19,10 @@ USER = "!555345525f5f5f55534552"
 EXIST = "!45584953545f5f4558495354"
 OK = "!4f4b5f4f4ba"
 IS_FRIEND = "!69735f667269656e64"
+READY = "72656164795f5f7265616479"
 
 forbidden = [REGISTRATION, CREATED, LOGIN, CORRECT, CHAT, NOTHING, SEND, FRIENDS,
-             ADDED, DISCONNECT, INCORRECT, USER, EXIST, OK, IS_FRIEND]
+             ADDED, DISCONNECT, INCORRECT, USER, EXIST, OK, IS_FRIEND, READY]
 
 Connection = Connection()
 Connection.connect()
@@ -36,7 +36,7 @@ app.config.update(dict(
 app.debug = True
 
 # Configure database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users_client.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users_client.db' # Database name
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -105,63 +105,76 @@ def login():
 Ready_to_update = False
 
 
-def run():
+@app.route('/get_messages')
+def get_messages():
     global Ready_to_update
     while True:
-        time.sleep(2)
-        if Ready_to_update:
-            Connection.send("ready")
-            user = Connection.recv()
-            messages = user[2] + user[3]
-            messages.sort(key=lambda x: x[4])
-            print(messages)
+        try:
+            messages = []
+            time.sleep(1)
+            if Ready_to_update:
+                Connection.send(READY)
+                messages_from = Connection.recv()
+                messages_to = Connection.recv()
+                messages = messages_from + messages_to
+                messages.sort(key=lambda x: x[4])
+
+            return render_template('messages.html', name=current_user.username, messages=messages)
+        except:
+            print("There was something issue with loading messages")
+            Ready_to_update = False
+            app.run(debug=True)
 
 
 @app.route('/chat', methods=['POST', 'GET'])
 @login_required
 def chat():
     global Ready_to_update
-    Ready_to_update = False
 
-    Connection.send(CHAT)
-    Connection.send(current_user.username)
+    try:
+        Ready_to_update = False
 
-    chat_form = ChatForm()
-    chat_form.friend.choices = Connection.recv()
-    chat_form.friend.default = chat_form.friend.choices[0]
-    user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
+        Connection.send(CHAT)
+        Connection.send(current_user.username)
 
-    if user_to_send:
-        user_to_send = user_to_send.split()[1]
-        Connection.send(user_to_send)
-        messages_from = Connection.recv()
-        messages_to = Connection.recv()
-    else:
-        Connection.send("server")
-        messages_from = Connection.recv()
-        messages_to = Connection.recv()
+        chat_form = ChatForm()
+        chat_form.friend.choices = Connection.recv()
+        chat_form.friend.default = chat_form.friend.choices[0]
 
-    messages = messages_from + messages_to
-    messages.sort(key=lambda x:x[4])
+        user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
-    thread = threading.Thread(target=run, args=())
-    thread.start()
+        if user_to_send:
+            user_to_send = user_to_send.split()[1]
+            Connection.send(user_to_send)
+            messages_from = Connection.recv()
+            messages_to = Connection.recv()
+        else:
+            Connection.send(" ")
+            messages_from = Connection.recv()
+            messages_to = Connection.recv()
 
-    if request.method == 'POST':
-        if request.form['action'] == 'Send':
-            message = chat_form.text.data
-            if message != "" and message not in forbidden:
-                if user_to_send:
-                    Connection.send(message)
+        messages = messages_from + messages_to
+        messages.sort(key=lambda x:x[4])
 
-            chat_form.text.data = ""
+        if request.method == 'POST':
+            if request.form['action'] == 'Send':
+                message = chat_form.text.data
+                if message != "" and message not in forbidden:
+                    if user_to_send:
+                        Connection.send(message)
 
-        if request.form['action'] == 'Add new friend':
-            return redirect(url_for('friends'))
+                chat_form.text.data = ""
 
-    Ready_to_update = True
+            if request.form['action'] == 'Add new friend':
+                return redirect(url_for('friends'))
 
-    return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
+        Ready_to_update = True
+
+        return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
+    except:
+        print("There was something issue with chat")
+        Ready_to_update = False
+        app.run(debug=True)
 
 
 @app.route('/friends', methods=['POST', 'GET'])

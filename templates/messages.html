@@ -1,0 +1,19 @@
+{% extends "body.html" %}
+
+{% block head %}
+    <title>Communicator</title>
+{% endblock %}
+
+{% block body %}
+        <div id="board">
+            <ul id="messages", class="parent">
+            {% for msg in messages%}
+                {% if msg[2] == name %}
+                    <li style="color:#000000">{{ (msg[4]|string())[11:19] }} {{ msg[1]  }} : {{ msg[3] }}</li>
+                {% elif msg[2] != name %}
+                    <li style="color:#0048ff; justify-content: flex-end">{{ msg[3] }} : {{ name }} {{ (msg[4]|string())[11:19] }}</li>
+                {% endif %}
+            {% endfor %}
+            </ul>
+        </div>
+{% endblock %}

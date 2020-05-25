@@ -53,6 +53,8 @@ class Connection(object):
             send_length += b' ' * (self.HEADER - len(send_length))
             self.client.send(send_length)
             self.client.send(message)
+            if msg != DISCONNECT:
+                socket.close()
         except Exception:
             pass
 
