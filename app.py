@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, request
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import threading, queue
 import time
 
 REGISTRATION = "!726567697374726174696f6e" # !HEX
@@ -101,48 +102,66 @@ def login():
     return render_template("login.html", form=login_form)
 
 
+Ready_to_update = False
+
+
+def run():
+    global Ready_to_update
+    while True:
+        time.sleep(2)
+        if Ready_to_update:
+            Connection.send("ready")
+            user = Connection.recv()
+            messages = user[2] + user[3]
+            messages.sort(key=lambda x: x[4])
+            print(messages)
+
+
 @app.route('/chat', methods=['POST', 'GET'])
 @login_required
 def chat():
-    while True:
-        Connection.send(CHAT)
-        Connection.send(current_user.username)
+    global Ready_to_update
+    Ready_to_update = False
 
-        chat_form = ChatForm()
-        chat_form.friend.choices = Connection.recv()
-        chat_form.friend.default = chat_form.friend.choices[0]
-        user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
+    Connection.send(CHAT)
+    Connection.send(current_user.username)
 
-        if user_to_send:
-            user_to_send = user_to_send.split()[1]
-            Connection.send(user_to_send)
-            messages_from = Connection.recv()
-            messages_to = Connection.recv()
-        else:
-            Connection.send("server")
-            messages_from = Connection.recv()
-            messages_to = Connection.recv()
+    chat_form = ChatForm()
+    chat_form.friend.choices = Connection.recv()
+    chat_form.friend.default = chat_form.friend.choices[0]
+    user_to_send = dict(chat_form.friend.choices).get(chat_form.friend.data)
 
-        messages = messages_from + messages_to
-        messages.sort(key=lambda x:x[4])
+    if user_to_send:
+        user_to_send = user_to_send.split()[1]
+        Connection.send(user_to_send)
+        messages_from = Connection.recv()
+        messages_to = Connection.recv()
+    else:
+        Connection.send("server")
+        messages_from = Connection.recv()
+        messages_to = Connection.recv()
 
-        if chat_form.validate_on_submit():
-            if request.form['action'] == 'Send':
-                message = chat_form.text.data
-                if message != "" and message not in forbidden:
-                    if user_to_send:
-                        Connection.send(message)
+    messages = messages_from + messages_to
+    messages.sort(key=lambda x:x[4])
 
-                chat_form.text.data = ""
+    thread = threading.Thread(target=run, args=())
+    thread.start()
 
-            if request.form['action'] == 'Select':
-                return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
+    if request.method == 'POST':
+        if request.form['action'] == 'Send':
+            message = chat_form.text.data
+            if message != "" and message not in forbidden:
+                if user_to_send:
+                    Connection.send(message)
 
-            if request.form['action'] == 'Add new friend':
-                return redirect(url_for('friends'))
+            chat_form.text.data = ""
 
-        time.sleep(0.1)
-        return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
+        if request.form['action'] == 'Add new friend':
+            return redirect(url_for('friends'))
+
+    Ready_to_update = True
+
+    return render_template('chat.html', form=chat_form, name=current_user.username, messages=messages)
 
 
 @app.route('/friends', methods=['POST', 'GET'])

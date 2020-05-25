@@ -46,23 +46,29 @@ class Connection(object):
             sys.exit()
 
     def send(self, msg):
-        message = msg.encode(self.FORMAT)
-        msg_length = len(message)
-        send_length = str(msg_length).encode(self.FORMAT)
-        send_length += b' ' * (self.HEADER - len(send_length))
-        self.client.send(send_length)
-        self.client.send(message)
+        try:
+            message = msg.encode(self.FORMAT)
+            msg_length = len(message)
+            send_length = str(msg_length).encode(self.FORMAT)
+            send_length += b' ' * (self.HEADER - len(send_length))
+            self.client.send(send_length)
+            self.client.send(message)
+        except Exception:
+            pass
 
     def recv(self):
-        msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = self.client.recv(msg_length).decode(self.FORMAT)
-            if msg == PICKLE:
-                msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)
-                if msg_length:
-                    msg_length = int(msg_length)
-                    msg = self.client.recv(msg_length)
-                    msg = pickle.loads(msg)
-                return msg
-        return msg
+        try:
+            msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)
+            if msg_length:
+                msg_length = int(msg_length)
+                msg = self.client.recv(msg_length).decode(self.FORMAT)
+                if msg == PICKLE:
+                    msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)
+                    if msg_length:
+                        msg_length = int(msg_length)
+                        msg = self.client.recv(msg_length)
+                        msg = pickle.loads(msg)
+                    return msg
+            return msg
+        except Exception:
+            pass

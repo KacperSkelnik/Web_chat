@@ -5,6 +5,7 @@ from database import Base, User, Messages, Friends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+import time
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', echo=True)
@@ -14,14 +15,13 @@ Base.metadata.create_all(bind=engine)
 
 HEADER = 10
 FORMAT = 'utf-8'
-DISCONNECT_MESSAGE = "!DISCONNECT"
 
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())  # local IP
 ADDR = (SERVER, PORT) # Address
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create socket and pick type
-server.bind(ADDR) # bind socket to address
+server.bind(ADDR)
 
 clients = []
 
@@ -42,6 +42,7 @@ OK = "!4f4b5f4f4ba"
 IS_FRIEND = "!69735f667269656e64"
 PICKLE = "!5049434b4c455f5f76617364"
 
+
 def start():
     server.listen()
     print(f"Server is listening on {SERVER}")
@@ -61,32 +62,38 @@ def handle_client(conn, addr):
     user = None
     connected = True
     while connected:
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            if msg == DISCONNECT_MESSAGE:
-                print("Client disconnected")
-                clients.remove((conn, user[0]))
-                conn.close()
-                connected = False
-            elif msg == USER:
-                check_username(conn)
-            elif msg == REGISTRATION:
-                registration(conn)
-            elif msg == LOGIN:
-                login(conn)
-            elif msg == CHAT:
-                user = handle_chat(conn)
-                clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
-            elif msg == FRIENDS:
-                #check_username(conn)
-                add_friend(conn)
-            else:
-                new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
-                session.add(new_message)
-                session.commit()
-        print(msg)
+        try:
+            msg_length = conn.recv(HEADER).decode(FORMAT)
+            if msg_length:
+                msg_length = int(msg_length)
+                msg = conn.recv(msg_length).decode(FORMAT)
+                if msg == DISCONNECT:
+                    print("Client disconnected")
+                    clients.remove((conn, user[0]))
+                    conn.close()
+                    connected = False
+                elif msg == USER:
+                    check_username(conn)
+                elif msg == REGISTRATION:
+                    registration(conn)
+                elif msg == LOGIN:
+                    login(conn)
+                elif msg == CHAT:
+                    user = handle_chat(conn)
+                    clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
+                elif msg == FRIENDS:
+                    add_friend(conn)
+                elif msg == "ready":
+                    if user:
+                        send(conn, PICKLE)
+                        send_pickle(conn, user)
+                else:
+                    new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
+                    session.add(new_message)
+                    session.commit()
+        except Exception:
+            pass
+
 
 def send(conn, msg):
     message = msg.encode(FORMAT)
@@ -194,6 +201,10 @@ def handle_chat(conn):
         send_pickle(conn, [(0, user, user_to, "Nothing", datetime.now())])
 
     return user, user_to, messages_from, messages_to
+
+
+def update_chat():
+    return 0
 
 
 def add_friend(conn):
