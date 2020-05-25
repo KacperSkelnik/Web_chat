@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 # Configure database
-engine = create_engine('sqlite:///users_server.db', echo=True)
+engine = create_engine('sqlite:///users_server.db', connect_args={"check_same_thread": False}, echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 Base.metadata.create_all(bind=engine)
@@ -16,7 +16,7 @@ HEADER = 10
 FORMAT = 'utf-8'
 
 PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())  # local IP
+SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT) # Address
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create socket and pick type
@@ -44,17 +44,16 @@ READY = "72656164795f5f7265616479"
 
 
 def start():
-    server.listen()
+    #server.listen()
     print(f"Server is listening on {SERVER}")
-    while True:
+    thread = [None]*10
+    #while True:
+    for i in range(10):
+        server.listen()
         conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
+        thread[i] = threading.Thread(target=handle_client, args=(conn, addr))
+        thread[i].start()
         print("Active connectors: ", threading.active_count() - 1)
-
-    for a, b in clients:
-        if a == conn:
-            clients.remove((a, b))
 
 
 def handle_client(conn, addr):
@@ -62,36 +61,35 @@ def handle_client(conn, addr):
     user = None
     connected = True
     while connected:
-        try:
-            msg_length = conn.recv(HEADER).decode(FORMAT)
-            if msg_length:
-                msg_length = int(msg_length)
-                msg = conn.recv(msg_length).decode(FORMAT)
-                if msg == DISCONNECT:
-                    print("Client disconnected")
-                    clients.remove((conn, user[0]))
-                    conn.close()
-                    connected = False
-                elif msg == USER:
-                    check_username(conn)
-                elif msg == REGISTRATION:
-                    registration(conn)
-                elif msg == LOGIN:
-                    login(conn)
-                elif msg == CHAT:
-                    user = handle_chat(conn)
-                    clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
-                elif msg == FRIENDS:
-                    add_friend(conn)
-                elif msg == READY:
-                    if user:
-                        message_handel(conn, user[1], user[0])
-                else:
-                    new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
-                    session.add(new_message)
-                    session.commit()
-        except Exception:
-            pass
+        print(conn)
+        msg_length = conn.recv(HEADER).decode(FORMAT)
+        if msg_length:
+            msg_length = int(msg_length)
+            msg = conn.recv(msg_length).decode(FORMAT)
+            if msg == DISCONNECT:
+                print("Client disconnected")
+                clients.remove((conn, user[0]))
+                conn.close()
+                clients.remove((conn, addr))
+                connected = False
+            elif msg == USER:
+                check_username(conn)
+            elif msg == REGISTRATION:
+                registration(conn)
+            elif msg == LOGIN:
+                login(conn)
+            elif msg == CHAT:
+                user = handle_chat(conn)
+                clients.append((conn, user[0])) if (conn, user[0]) not in clients else clients
+            elif msg == FRIENDS:
+                add_friend(conn)
+            elif msg == READY:
+                if user:
+                    message_handel(conn, user[1], user[0])
+            else:
+                new_message = Messages(username_to=user[1], username_from=user[0], message=msg, date=datetime.now())
+                session.add(new_message)
+                session.commit()
 
 
 def send(conn, msg):

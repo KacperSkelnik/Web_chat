@@ -111,14 +111,14 @@ def get_messages():
     while True:
         try:
             messages = []
-            time.sleep(1)
+            time.sleep(0.5)
             if Ready_to_update:
                 Connection.send(READY)
                 messages_from = Connection.recv()
                 messages_to = Connection.recv()
                 messages = messages_from + messages_to
                 messages.sort(key=lambda x: x[4])
-
+                time.sleep(0.5)
             return render_template('messages.html', name=current_user.username, messages=messages)
         except:
             print("There was something issue with loading messages")
