@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 # Configure database
-engine = create_engine('sqlite:///users_server.db', connect_args={"check_same_thread": False}, echo=True)
+engine = create_engine('sqlite:///users_server.db', connect_args={"check_same_thread": False}, echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 Base.metadata.create_all(bind=engine)
@@ -61,7 +61,6 @@ def handle_client(conn, addr):
     user = None
     connected = True
     while connected:
-        print(conn)
         msg_length = conn.recv(HEADER).decode(FORMAT)
         if msg_length:
             msg_length = int(msg_length)

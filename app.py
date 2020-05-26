@@ -3,6 +3,9 @@ from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import time
+from subprocess import call
+import os
+import sys
 
 REGISTRATION = "!726567697374726174696f6e" # !HEX
 CREATED = "!63726561746564"
@@ -62,6 +65,15 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def writePidFile():
+        pid = str(os.getpid())
+        f = open('app.pid', 'w')
+        f.write(pid)
+        f.close()
+
+writePidFile()
+
+
 @app.route('/', methods=['POST', 'GET'])
 def index():
     registration_form = RegistrationForm()
@@ -108,22 +120,21 @@ Ready_to_update = False
 @app.route('/get_messages')
 def get_messages():
     global Ready_to_update
-    while True:
-        try:
-            messages = []
-            time.sleep(0.5)
-            if Ready_to_update:
-                Connection.send(READY)
-                messages_from = Connection.recv()
-                messages_to = Connection.recv()
-                messages = messages_from + messages_to
-                messages.sort(key=lambda x: x[4])
-                time.sleep(0.5)
-            return render_template('messages.html', name=current_user.username, messages=messages)
-        except:
-            print("There was something issue with loading messages")
-            Ready_to_update = False
-            app.run(debug=True)
+    try:
+        messages = []
+        if Ready_to_update:
+            Connection.send(READY)
+            messages_from = Connection.recv()
+            messages_to = Connection.recv()
+            messages = messages_from + messages_to
+            messages.sort(key=lambda x: x[4])
+        return render_template('messages.html', name=current_user.username, messages=messages)
+    except:
+        print("There was something issue with loading messages")
+        Ready_to_update = False
+        Connection.send(DISCONNECT)
+        time.sleep(1)
+        call("./restart.sh", shell=True)
 
 
 @app.route('/chat', methods=['POST', 'GET'])
@@ -174,7 +185,9 @@ def chat():
     except:
         print("There was something issue with chat")
         Ready_to_update = False
-        app.run(debug=True)
+        Connection.send(DISCONNECT)
+        time.sleep(1)
+        call("./restart.sh", shell=True)
 
 
 @app.route('/friends', methods=['POST', 'GET'])
@@ -191,7 +204,6 @@ def friends():
 
 @app.route('/logout', methods=['GET'])
 def logout():
-    logout_user()
     Connection.send(DISCONNECT)
     return "You are log out"
 
