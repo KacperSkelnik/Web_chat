@@ -22,31 +22,30 @@ IS_FRIEND = "!69735f667269656e64"
 
 
 def validate_login(form, field):
-    password = field.data
-    username = form.username.data
+    password = field.data               # take password from form
+    username = form.username.data       # take username from form
 
-    Connection.send(LOGIN)
-    Connection.send(username)
+    Connection.send(LOGIN)              # send LOGIN to server
+    Connection.send(username)           # send data to server
     Connection.send(password)
-    a = Connection.recv()
-    if a == INCORRECT:
+    if Connection.recv() == INCORRECT:  # if receive INCORRECT raise
         raise ValidationError("Username or password is incorrect")
 
 
 class RegistrationForm(FlaskForm):
     """ Registration form """
-    username = StringField('username', validators=[InputRequired(message="Username required"), Length(min=2, max=25,
-        message="Username must be between 2 and 25 characters")])
-    password = PasswordField('password', validators=[InputRequired(message="Password required"), Length(min=2, max=25,
-        message="Password must be between 2 and 25 characters")])
+    username = StringField('username', validators=[InputRequired(message="Username required"), Length(min=4, max=25,
+        message="Username must be between 4 and 25 characters")])
+    password = PasswordField('password', validators=[InputRequired(message="Password required"), Length(min=4, max=25,
+        message="Password must be between 4 and 25 characters")])
     confirm_pswd = PasswordField('confirm_pswd', validators=[InputRequired(message="Password required"),
         EqualTo('password', message="Passwords must match")])
     submit_btton = SubmitField("Create")
 
     def validate_username(self, username):
-        Connection.send(USER)
-        Connection.send(username.data)
-        if Connection.recv() == EXIST:
+        Connection.send(USER)           # send USER to server
+        Connection.send(username.data)  # send username
+        if Connection.recv() == EXIST:  # if server return EXIST
             raise ValidationError("Username already exists. Select a different username.")
 
 
@@ -69,17 +68,15 @@ class FriendsForm(FlaskForm):
     submit_btton = SubmitField("invite")
 
     def validate_username(self, username):
-        Connection.send(USER)
-        Connection.send(username.data)
-        if Connection.recv() == OK:
+        Connection.send(USER)           # send USER to
+        Connection.send(username.data)  # send data from form to server
+        if Connection.recv() == OK:     # if server return OK
             raise ValidationError("Username dont exists. Try with different username.")
         else:
-            Connection.send(FRIENDS)
+            Connection.send(FRIENDS)    # else send FRIENDS
 
-            Connection.send(current_user.username)
+            Connection.send(current_user.username)      # send data about friend
             Connection.send(username.data)
 
-            if Connection.recv() == IS_FRIEND:
+            if Connection.recv() == IS_FRIEND:          # if server return IS_FRIEND
                 raise ValidationError("User is already your friend")
-            else:
-                pass

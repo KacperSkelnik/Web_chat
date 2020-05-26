@@ -2,7 +2,7 @@ from flask_login import UserMixin
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime
 
-Base = declarative_base()
+Base = declarative_base()   # declaration base
 
 
 class User(UserMixin, Base):

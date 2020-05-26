@@ -2,7 +2,7 @@ import socket
 import sys
 import pickle
 
-REGISTRATION = "!726567697374726174696f6e" # !HEX
+REGISTRATION = "!726567697374726174696f6e" # !HEX use to something like handshake
 CREATED = "!63726561746564"
 LOGIN = "!6c6f67696e"
 CORRECT = "!636f7272656374"
@@ -19,50 +19,50 @@ OK = "!4f4b5f4f4ba"
 IS_FRIEND = "!69735f667269656e64"
 PICKLE = "!5049434b4c455f5f76617364"
 
-class Connection(object):
-    HEADER = 10
-    FORMAT = 'utf-8'
-    DISCONNECT_MSG = "!DISC"
 
-    PORT = 5050
-    SERVER = socket.gethostbyname(socket.gethostname()) # local IP
-    ADDR = (SERVER, PORT)  # Address
+class Connection(object):
+    HEADER = 10                         # keep length of message
+    FORMAT = 'utf-8'                    # set format
+
+    PORT = 5050                         # set port
+    SERVER = socket.gethostbyname(socket.gethostname()) # local IP have to be change to server ip
+    ADDR = (SERVER, PORT)               # address
 
     try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # try to create socket
     except socket.error as e:
         print("Failed To Create A Scoket")
         print("Reason : ", str(e))
-        sys.exit()
+        sys.exit()                                                      # exit
     print("Socket Created Successfully")
 
     def connect(self):
         try:
-            self.client.connect(self.ADDR)
+            self.client.connect(self.ADDR)                              # try to connect to server
             print("Socket connected to host ", self.SERVER + " on port ", self.PORT)
         except socket.error as e:
             print("Failed connection to host ", self.SERVER, " on port ", self.PORT)
             print("Reason", str(e))
-            sys.exit()
+            sys.exit()                                                  # exit
 
     def send(self, msg):
-        message = msg.encode(self.FORMAT)
-        msg_length = len(message)
-        send_length = str(msg_length).encode(self.FORMAT)
-        send_length += b' ' * (self.HEADER - len(send_length))
-        self.client.send(send_length)
-        self.client.send(message)
+        message = msg.encode(self.FORMAT)                               # code message to utf-8
+        msg_length = len(message)                                       # take message length
+        send_length = str(msg_length).encode(self.FORMAT)               # create encode message length
+        send_length += b' ' * (self.HEADER - len(send_length))          # add empty bytes
+        self.client.send(send_length)                                   # send message length
+        self.client.send(message)                                       # send message
 
     def recv(self):
-        msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)
+        msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)  # receive HEADER bytes
         if msg_length:
-            msg_length = int(msg_length)
-            msg = self.client.recv(msg_length).decode(self.FORMAT)
-            if msg == PICKLE:
-                msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)
+            msg_length = int(msg_length)                                # take messages length
+            msg = self.client.recv(msg_length).decode(self.FORMAT)  # receive and decode message of length as msg_length
+            if msg == PICKLE:                                       # if server send you PICKLE
+                msg_length = self.client.recv(self.HEADER).decode(self.FORMAT)  # repeat sequence
                 if msg_length:
                     msg_length = int(msg_length)
-                    msg = self.client.recv(msg_length)
-                    msg = pickle.loads(msg)
+                    msg = self.client.recv(msg_length)              # receive pickled data
+                    msg = pickle.loads(msg)                         # unpickle data
                 return msg
-        return msg
+            return msg
