@@ -26,7 +26,7 @@ READY = "72656164795f5f7265616479"
 forbidden = [REGISTRATION, CREATED, LOGIN, CORRECT, CHAT, NOTHING, SEND, FRIENDS,  # Array of forbidden messages because
              ADDED, DISCONNECT, INCORRECT, USER, EXIST, OK, IS_FRIEND, READY]      # of handshakes
 
-server = s
+server = os.environ["server"]
 Connection = Connection(server)   # create Connection object
 Connection.connect()        # connect app with server
 
