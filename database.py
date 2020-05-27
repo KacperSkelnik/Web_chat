@@ -1,3 +1,5 @@
+#Kacper Skelnik 291566
+#Wojciech Tyczyński 291563
 from flask_login import UserMixin
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime

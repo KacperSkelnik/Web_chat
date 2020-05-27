@@ -1,3 +1,5 @@
+#Kacper Skelnik 291566
+#Wojciech Tyczyński 291563
 #!/bin/bash
 
 python3 -m pip install --user virtualenv

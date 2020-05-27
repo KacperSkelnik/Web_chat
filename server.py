@@ -1,3 +1,5 @@
+#Kacper Skelnik 291566
+#Wojciech Tyczyński 291563
 import socket
 import threading
 import pickle
@@ -5,6 +7,7 @@ from database import Base, User, Messages, Friends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+import netifaces as ni
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', connect_args={"check_same_thread": False}, echo=False)
@@ -15,8 +18,10 @@ Base.metadata.create_all(bind=engine)
 HEADER = 10                                             # keep length of message
 FORMAT = 'utf-8'                                        # set format
 
+ni.ifaddresses('wlo1')
+ip = ni.ifaddresses('wlo1')[ni.AF_INET][0]['addr']      # get true ip
 PORT = 5050                                             # set port
-SERVER = socket.gethostbyname(socket.gethostname())     # local ip
+SERVER = ip#socket.gethostbyname(socket.getfqdn())      # local ip
 ADDR = (SERVER, PORT)                                   # address
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create socket and pick type
