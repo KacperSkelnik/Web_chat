@@ -21,20 +21,21 @@ PICKLE = "!5049434b4c455f5f76617364"
 
 
 class Connection(object):
-    HEADER = 10                         # keep length of message
-    FORMAT = 'utf-8'                    # set format
 
-    PORT = 5050                         # set port
-    SERVER = socket.gethostbyname(socket.gethostname()) # local IP have to be change to server ip
-    ADDR = (SERVER, PORT)               # address
+    def __init__(self, server):
+        self.HEADER = 10  # keep length of message
+        self.FORMAT = 'utf-8'  # set format
 
-    try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # try to create socket
-    except socket.error as e:
-        print("Failed To Create A Scoket")
-        print("Reason : ", str(e))
-        sys.exit()                                                      # exit
-    print("Socket Created Successfully")
+        self.PORT = 5050  # set port
+        self.SERVER = server  # local IP have to be change to server ip
+        self.ADDR = (self.SERVER, self.PORT)  # address
+        try:
+            self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # try to create socket
+        except socket.error as e:
+            print("Failed To Create A Scoket")
+            print("Reason : ", str(e))
+            sys.exit()                                                      # exit
+        print("Socket Created Successfully")
 
     def connect(self):
         try:
