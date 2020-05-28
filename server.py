@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import netifaces as ni
 import os
+import sys
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', connect_args={"check_same_thread": False}, echo=False)
@@ -20,7 +21,11 @@ HEADER = 10                                             # keep length of message
 FORMAT = 'utf-8'                                        # set format
 
 ip_name = os.environ["ip_name"]
-ni.ifaddresses(ip_name)                                  # looking for wlo1 ip
+try:
+    ni.ifaddresses(ip_name)                              # looking for wlo1 ip
+except:
+    print('There was something wrong with ip name')
+    sys.exit()
 ip = ni.ifaddresses(ip_name)[ni.AF_INET][0]['addr']      # get true ip
 PORT = 5050                                              # set port
 SERVER = ip                                              # on Ubuntu ih have to be this way
