@@ -1,3 +1,5 @@
+#Kacper Skelnik 291566
+#Wojciech Tyczyński 291563
 #!/bin/bash
 
 read -p "Enter IP name: " ip_name

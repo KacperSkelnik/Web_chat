@@ -1,3 +1,5 @@
+#Kacper Skelnik 291566
+#Wojciech Tyczyński 291563
 from flask import Flask, render_template, redirect, url_for, request
 from connection import Connection
 from flask_sqlalchemy  import SQLAlchemy
@@ -59,7 +61,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(), nullable=False)
 
 
-# Configure login decorator
+# Configure login decoratorexcept
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))     # return User data base object by id

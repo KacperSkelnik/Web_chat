@@ -32,8 +32,13 @@ SERVER = ip                                              # on Ubuntu ih have to 
 #SERVER = socket.gethostbyname(socket.gethostname())     # local ip should work on Windows and Debian (if ip is not protected)
 ADDR = (SERVER, PORT)                                    # address
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create socket and pick type
-server.bind(ADDR)                                           # bind address to server
+try:
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create socket and pick type (TCP)
+    server.bind(ADDR)                                           # bind address to server
+except socket.error as e:
+    print("Failed To Create A Scoket")
+    print("Reason : ", str(e))
+    sys.exit()
 
 clients = []
 
