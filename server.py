@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import netifaces as ni
+import os
 
 # Configure database
 engine = create_engine('sqlite:///users_server.db', connect_args={"check_same_thread": False}, echo=False)
@@ -18,11 +19,12 @@ Base.metadata.create_all(bind=engine)
 HEADER = 10                                             # keep length of message
 FORMAT = 'utf-8'                                        # set format
 
-#ni.ifaddresses('wlo1')                                  # looking for wlo1 ip
-#ip = ni.ifaddresses('wlo1')[ni.AF_INET][0]['addr']      # get true ip
+ip_name = os.environ["ip_name"]
+ni.ifaddresses(ip_name)                                  # looking for wlo1 ip
+ip = ni.ifaddresses(ip_name)[ni.AF_INET][0]['addr']      # get true ip
 PORT = 5050                                              # set port
-#SERVER = ip                                             # on Ubuntu ih have to be this way
-SERVER = socket.gethostbyname(socket.gethostname())      # local ip should work on Windows and Debian (if ip is not protected)
+SERVER = ip                                              # on Ubuntu ih have to be this way
+#SERVER = socket.gethostbyname(socket.gethostname())     # local ip should work on Windows and Debian (if ip is not protected)
 ADDR = (SERVER, PORT)                                    # address
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create socket and pick type
